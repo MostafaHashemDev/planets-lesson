@@ -7,7 +7,7 @@ learn_distribution_frontend sha: a1ddcd9e0d6e8fffcc9d1eec1089dc6f71348abc
 mondrian sha: f0084208747f9e28cf1eaac69179d22b34c6bfba
 sandbox sha: f6257b85c72be8fc2cd9ef887048e49cef6b15e8
  -->
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -18,11 +18,110 @@ sandbox sha: f6257b85c72be8fc2cd9ef887048e49cef6b15e8
     </script>
     
     <script src="lib/dist/77aa0c2e.js"></script>
+
+    <style>
+      html, body { direction: rtl !important; }
+      a[href*="articulate.com"],
+      [aria-label*="Articulate" i],
+      [title*="Articulate" i],
+      .watermark,
+      [class*="watermark" i],
+      [class*="powered-by" i],
+      [class*="poweredBy" i] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
     
-      <script src="lib/rise/87e760e2.js"></script>
-    
+    <script src="lib/rise/87e760e2.js"></script>
+
+    <script>
+    (function() {
+      const ARABIC_START = "ابدأ الدرس";
+      document.documentElement.setAttribute("dir", "rtl");
+      document.documentElement.setAttribute("lang", "ar");
+
+      function hideWatermarkDeep(root) {
+        if (!root) return;
+
+        if (root instanceof ShadowRoot && !root.querySelector('#hide-art-wm')) {
+          const st = document.createElement('style');
+          st.id = 'hide-art-wm';
+          st.textContent = `
+            a[href*="articulate.com"], [aria-label*="Articulate" i], [title*="Articulate" i],
+            [class*="watermark" i], [class*="powered-by" i], [class*="poweredBy" i] {
+              display: none !important; visibility: hidden !important; opacity: 0 !important;
+            }
+          `;
+          root.appendChild(st);
+        }
+
+        root.querySelectorAll('a[href*="articulate.com"], [aria-label*="Articulate" i], [title*="Articulate" i], [class*="watermark" i], [class*="powered-by" i], [class*="poweredBy" i]').forEach(el => {
+          el.style.setProperty("display", "none", "important");
+        });
+
+        root.querySelectorAll('div, span, a, footer, p, aside').forEach(el => {
+          const txt = (el.textContent || "").trim();
+          if (txt.length > 0 && txt.length < 60 && (/powered by articulate|articulate 360|trial/i.test(txt))) {
+            if (el.id !== "app" && !el.querySelector('#app')) {
+              el.style.setProperty("display", "none", "important");
+              if (el.parentElement && (el.parentElement.textContent || "").trim().length < 60 && el.parentElement.id !== "app") {
+                el.parentElement.style.setProperty("display", "none", "important");
+              }
+            }
+          }
+          if (el.shadowRoot) {
+            hideWatermarkDeep(el.shadowRoot);
+          }
+        });
+
+        root.querySelectorAll('button, a, [role="button"], [role="link"]').forEach(el => {
+          const txt = (el.textContent || "").trim();
+          const aria = (el.getAttribute("aria-label") || "").trim();
+          if (/^(start|begin|start course|get started|enter course|continue)$/i.test(txt) || /^(start|begin|start course|get started|enter course|continue)$/i.test(aria)) {
+            el.setAttribute("dir", "rtl");
+            el.setAttribute("lang", "ar");
+            el.setAttribute("aria-label", ARABIC_START);
+            if (el.children.length === 0) {
+              el.textContent = ARABIC_START;
+            } else {
+              const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+              let node;
+              while ((node = walker.nextNode())) {
+                if (node.nodeValue && /^(start|begin|start course|get started|enter course|continue)$/i.test(node.nodeValue.trim())) {
+                  node.nodeValue = ARABIC_START;
+                }
+              }
+            }
+          }
+        });
+
+        root.querySelectorAll('audio, video').forEach(m => {
+          m.muted = true;
+          m.defaultMuted = true;
+          m.volume = 0;
+        });
+      }
+
+      const run = () => hideWatermarkDeep(document);
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", run);
+      } else {
+        run();
+      }
+
+      new MutationObserver(run).observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      });
+      setInterval(run, 800);
+    })();
+    </script>
   </body>
 </html>
